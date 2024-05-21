@@ -1,10 +1,13 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
-export default defineNuxtConfig({
+export default {
   devtools: { enabled: true },
-  modules: [
+
+  buildModules: [
     '@nuxtjs/axios',
   ],
+
   axios: {
-    baseURL: 'http://localhost:8000',
+    baseURL: 'http://localhost:8000/api',
   },
-})
+
+  modules: ["@nuxt/ui"]
+};
