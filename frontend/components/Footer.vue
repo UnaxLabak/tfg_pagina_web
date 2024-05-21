@@ -1,80 +1,45 @@
 <template>
-    <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-logo">
-        </div>
-        <div class="footer-links">
-          <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-          </ul>
-        </div>
-        <div class="footer-social">
+  <footer class="footer">
+    <div class="footer-content">
+      <a href="#" class="footer-item">About Us</a>
+      <a href="#" class="footer-item">Contact</a>
+      <a href="#" class="footer-item">Privacy Policy</a>
+      <a href="#" class="footer-item">Terms of Service</a>
+    </div>
+    <div class="footer-copy">
+      © 2024 Your Company. All rights reserved.
+    </div>
+  </footer>
+</template>
 
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2024 Your Company. All rights reserved.</p>
-      </div>
-    </footer>
-  </template>
-  
-  <script>
-  export default {
-    name: 'Footer'
-  }
-  </script>
-  
-  <style scoped>
-  .footer {
-    background-color: #1c1c1e;
-    color: #ffffff;
-    padding: 2rem 0;
-  }
-  
-  .footer-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    padding: 0 2rem;
-  }
-  
-  .footer-logo img {
-    height: 40px;
-  }
-  
-  .footer-links ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-  }
-  
-  .footer-links li {
-    margin: 0 1rem;
-  }
-  
-  .footer-links a {
-    color: #ffffff;
-    text-decoration: none;
-  }
-  
-  .footer-social a {
-    margin: 0 0.5rem;
-  }
-  
-  .footer-social img {
-    height: 24px;
-  }
-  
-  .footer-bottom {
-    text-align: center;
-    padding: 1rem 0;
-    border-top: 1px solid #333333;
-    margin-top: 1rem;
-  }
-  </style>
-  
+<script>
+export default {
+  name: 'Footer'
+}
+</script>
+
+<style scoped>
+.footer {
+  background-color: #000;
+  color: #fff;
+  padding: 20px 40px;
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.footer-item {
+  margin: 0 20px;
+  text-decoration: none;
+  color: #fff;
+  font-size: 18px;
+}
+
+.footer-copy {
+  font-size: 16px;
+}
+</style>
