@@ -1,20 +1,19 @@
 <template>
-  <Layout>
+  <div>
     <Boton @click="handleButtonClick" buttonText="Submit" />
     <!-- Add more content as needed -->
-  </Layout>
+  </div>
 </template>
 
 <script>
 import Boton from '@/components/Boton.vue';
-import Layout from '@/components/Layout.vue';
 
 const baseURL = 'http://localhost:8000';
 
 export default {
+  layout: 'default',
   components: {
-    Boton,
-    Layout
+    Boton
   },
   methods: {
     async handleButtonClick() {
