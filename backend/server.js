@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./models');
 const userRoutes = require('./api/userRoutes');
+const ariketaRoutes = require('./api/ariketaRoutes');
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -12,6 +13,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use('/api', userRoutes);
+app.use('/docker', ariketaRoutes);
 
 // Test the connection
 db.sequelize.authenticate()

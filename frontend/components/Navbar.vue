@@ -126,19 +126,5 @@ const isActive = (to) => route.path === to
   animation: scan 10s steps(1, end) infinite;
 }
 
-@keyframes scan {
-  0%, 10% { filter: brightness(1); color: #50f00c; }
-  11%, 12% { filter: brightness(2); color: #a4f77e; }
-  13%, 14% { filter: brightness(0.5); color: #0d3003; } 
-  15%, 16% { filter: brightness(2); color: #a4f77e; }
-  17%, 18% { filter: brightness(0.5); color: #0d3003; }
-  19%, 20% { filter: brightness(2); color: #a4f77e; }
-  21%, 40% { filter: brightness(1); color: #50f00c; }
-  41%, 42% { filter: brightness(0.1); color: #0d3003; } 
-  43%, 44% { filter: brightness(3); color: #50f00c; }
-  45%, 46% { filter: brightness(1); color: #50f00c; }
-  47%, 48% { filter: brightness(2); color: #50f00c; }
-  49%, 50% { filter: brightness(1); color: #50f00c; }
-  51%, 100% { filter: brightness(1); color: #50f00c; }
-}
+
 </style>

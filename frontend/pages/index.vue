@@ -1,7 +1,7 @@
 <template>
   <div>
-    <Boton @click="handleButtonClick" buttonText="Submit" />
-    <!-- Add more content as needed -->
+    <Boton @click="createUser" buttonText="Create User" />
+    <Boton @click="activateDocker" buttonText="Activate Docker" />
   </div>
 </template>
 
@@ -16,7 +16,7 @@ export default {
     Boton
   },
   methods: {
-    async handleButtonClick() {
+    async createUser() {
       try {
         const userData = {
           username: 'Mosimosi',
@@ -39,11 +39,28 @@ export default {
           } else {
             throw new Error('HTTP error ' + response.status);
           }
-        }else{
+        } else {
           console.log('User was created successfully:', data);
         }
       } catch (error) {
         console.error('An error occurred while creating the user:', error);
+      }
+    },
+    async activateDocker() {
+      try {
+        const response = await fetch(baseURL + '/api/exercises', {
+          method: 'POST',
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error('HTTP error ' + response.status);
+        } else {
+          console.log('Exercise Docker activated successfully:', data);
+        }
+      } catch (error) {
+        console.error('An error occurred while activating the Docker:', error);
       }
     }
   }
