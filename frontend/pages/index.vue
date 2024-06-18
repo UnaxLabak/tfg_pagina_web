@@ -1,19 +1,21 @@
 <template>
   <div>
-    <Boton @click="createUser" buttonText="Create User" />
-    <Boton @click="activateDocker" buttonText="Activate Docker" />
+    <Ariketa :id="1" statusColor="green" />
+    <Ariketa :id="2" statusColor="orange" />
   </div>
 </template>
 
 <script>
 import Boton from '@/components/Boton.vue';
+import Ariketa from '@/components/Ariketa.vue';
 
 const baseURL = 'http://localhost:8000';
 
 export default {
   layout: 'default',
   components: {
-    Boton
+    Boton,
+    Ariketa
   },
   methods: {
     async createUser() {
@@ -35,7 +37,7 @@ export default {
 
         if (!response.ok) {
           if (response.status === 400 && data.error) {
-            console.log(data.error)
+            console.log(data.error);
           } else {
             throw new Error('HTTP error ' + response.status);
           }
@@ -66,3 +68,7 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* Aquí puedes agregar estilos globales o específicos para esta página */
+</style>

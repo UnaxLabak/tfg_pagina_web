@@ -1,9 +1,13 @@
 <template>
   <div class="layout">
     <Navbar />
-    <main class="content">
-      <NuxtPage />
-    </main>
+    <div class="main-wrapper">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <NuxtPage />
+      </main>
+      <aside class="sidebar"></aside>
+    </div>
     <Footer />
   </div>
 </template>
@@ -25,6 +29,15 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+.main-wrapper {
+  display: flex;
+  flex: 1;
+}
+
+.sidebar {
+  width: 10%; /* Ajusta este valor para el ancho deseado de los márgenes laterales */
 }
 
 .content {

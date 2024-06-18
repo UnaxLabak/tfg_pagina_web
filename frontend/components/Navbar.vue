@@ -14,9 +14,10 @@
       </ul>
     </div>
     <div class="navbar-section auth-buttons">
-      <a href="#" class="sign-in">Sign In</a>
-      <a href="#" class="get-started">Get Started</a>
+      <a href="/login" class="sign-in">Sign In</a>
+      <a href="/register" class="get-started">Get Started</a>
     </div>
+
   </nav>
 </template>
 
