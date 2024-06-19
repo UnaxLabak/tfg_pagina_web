@@ -1,65 +1,71 @@
 <template>
-    <div class="auth-container">
-      <h1 class="title">Inicio de Sesión</h1>
-      <form @submit.prevent="login">
-        <div class="input-group">
-          <label for="username" class="label">Usuario</label>
-          <input type="text" v-model="username" id="username" class="input-field" required />
-        </div>
-        <div class="input-group">
-          <label for="password" class="label">Contraseña</label>
-          <input type="password" v-model="password" id="password" class="input-field" required />
-        </div>
-        <button type="submit" class="button" :class="{ 'disabled': !isFormValid }" :disabled="!isFormValid">
-          Iniciar Sesión
-        </button>
-        <p class="register-link">
-          ¿No tienes cuenta? <router-link to="/register">Regístrate</router-link>
-        </p>
-      </form>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        username: '',
-        password: ''
-      };
-    },
-    computed: {
-      isFormValid() {
-        return this.username !== '' && this.password !== '';
-      }
-    },
-    methods: {
-      async login() {
-        try {
-          const response = await fetch('http://localhost:8000/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username: this.username, password: this.password }),
-          });
-  
-          if (!response.ok) {
-            throw new Error('Login failed');
-          }
-  
-          const data = await response.json();
-          alert('Inicio de sesión exitoso');
-          // Redirigir a la página principal o donde sea necesario
-          this.$router.push('/');
-        } catch (error) {
-          console.error('Error during login:', error);
-          alert('Error durante el inicio de sesión');
+  <div class="auth-container">
+    <h1 class="title">Inicio de Sesión</h1>
+    <form @submit.prevent="login">
+      <div class="input-group">
+        <label for="username" class="label">Usuario</label>
+        <input type="text" v-model="username" id="username" class="input-field" required />
+      </div>
+      <div class="input-group">
+        <label for="password" class="label">Contraseña</label>
+        <input type="password" v-model="password" id="password" class="input-field" required />
+      </div>
+      <button type="submit" class="button" :class="{ 'disabled': !isFormValid }" :disabled="!isFormValid">
+        Iniciar Sesión
+      </button>
+      <p class="register-link">
+        ¿No tienes cuenta? <router-link to="/register">Regístrate</router-link>
+      </p>
+    </form>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      username: '',
+      password: ''
+    };
+  },
+  computed: {
+    isFormValid() {
+      return this.username !== '' && this.password !== '';
+    }
+  },
+  methods: {
+    async login() {
+      try {
+        const response = await fetch('http://localhost:8000/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: this.username, password: this.password }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Login failed');
         }
+
+        const data = await response.json();
+        const token = data.token;
+
+        // Almacenar el token en localStorage para mantener la sesión
+        localStorage.setItem('loginToken', token);
+
+        // Redirigir a la página principal o donde sea necesario
+        this.$router.push('/');
+      } catch (error) {
+        console.error('Error during login:', error);
+        alert('Error durante el inicio de sesión');
       }
     }
-  };
-  </script>
+  }
+};
+</script>
+
+
   
   <style scoped>
   .auth-container {

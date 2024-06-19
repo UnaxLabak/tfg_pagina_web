@@ -14,28 +14,44 @@
       </ul>
     </div>
     <div class="navbar-section auth-buttons">
-      <a href="/login" class="sign-in">Sign In</a>
-      <a href="/register" class="get-started">Get Started</a>
+      <a v-if="isLoggedIn" @click="logout" class="get-started">Cerrar Sesión</a>
+      <a v-else href="/login" class="get-started">Login</a>
     </div>
-
   </nav>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, watchEffect } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
-const route = useRoute()
+const router = useRouter()
+
 
 const links = ref([
   { label: 'Home', icon: 'i-heroicons-home', to: '/' },
   { label: 'App', icon: 'i-heroicons-chart-bar', to: '/app' },
-  { label: 'Pricing', icon: 'i-heroicons-currency-dollar', to: '/pricing' },
-  { label: 'Resources', icon: 'i-heroicons-book-open', to: '/resources' },
-  { label: 'Company', icon: 'i-heroicons-office-building', to: '/company' }
+  { label: 'Pricing', icon: 'i-heroicons-currency-dollar', to: '/' },
+  { label: 'Resources', icon: 'i-heroicons-book-open', to: '/' },
+  { label: 'Company', icon: 'i-heroicons-office-building', to: '/' }
 ])
 
-const isActive = (to) => route.path === to
+const isActive = (to) => router.currentRoute.value.path === to
+
+const isLoggedIn = ref(false)
+
+watchEffect(() => {
+  if (process.client) {
+    isLoggedIn.value = localStorage.getItem('loginToken') !== null
+  }
+})
+
+const logout = () => {
+  if (process.client) {
+    localStorage.removeItem('loginToken')
+    router.push('/')
+    isLoggedIn.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -63,6 +79,7 @@ const isActive = (to) => route.path === to
 .auth-buttons {
   justify-content: flex-end;
   margin-right: 100px;
+  z-index: 10; /* Asegúrate de que el z-index esté por encima de otros elementos */
 }
 
 .nav-items ul {
@@ -111,8 +128,6 @@ const isActive = (to) => route.path === to
   transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
-
-
 .nav-link:hover, .auth-buttons a:hover {
   color: #50f00c;
   transform: scale(1.1);
@@ -126,6 +141,4 @@ const isActive = (to) => route.path === to
   color: #50f00c; /* Establece el color inicial del logo a verde neón */
   animation: scan 10s steps(1, end) infinite;
 }
-
-
 </style>
