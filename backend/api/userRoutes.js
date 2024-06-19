@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs'); // Librería para hash de contraseñas
-const jwt = require('jsonwebtoken'); // Librería para manejar tokens JWT
+const jwt = require('jsonwebtoken');
 const { User } = require('../models'); // Importa el modelo de usuario
 
 // Ruta para registro de usuario
@@ -9,25 +8,26 @@ router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    console.log('Registering user:', username);
+
     // Verifica si ya existe un usuario con el mismo nombre de usuario
     const existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
+      console.log('A user with this username already exists:', username);
       return res.status(400).json({ error: 'A user with this username already exists' });
     }
 
-    // Hash de la contraseña antes de guardarla en la base de datos
-    const hashedPassword = await bcrypt.hash(password, 10); // El número 10 es el costo del hash
-
-    // Crea un nuevo usuario con la contraseña hasheada
+    // Crea un nuevo usuario con la contraseña en texto plano
     const newUser = await User.create({
       username,
-      password: hashedPassword // Guarda la contraseña hasheada
+      password // Guarda la contraseña en texto plano
     });
 
+    console.log('User registered successfully:', username);
     res.status(201).json(newUser); // Devuelve el usuario creado
   } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({ error: 'An error occurred while trying to register the user' });
+    console.error('Error during registration:', error.message);
+    res.status(500).json({ error: 'An error occurred while trying to register the user', details: error.message });
   }
 });
 
@@ -36,26 +36,35 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    console.log('Attempting login for user:', username);
+
     // Busca al usuario por nombre de usuario
     const user = await User.findOne({ where: { username } });
     if (!user) {
+      console.log('User not found:', username);
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Compara la contraseña ingresada con la contraseña almacenada (hasheada)
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    console.log('User found:', username);
+
+    // Compara la contraseña ingresada con la contraseña almacenada (en texto plano)
+    if (password !== user.password) {
+      console.log('Invalid password for user:', username);
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    // Aquí puedes generar un token JWT para manejar la sesión del usuario
+    console.log('Password valid for user:', username);
+
+    // Genera un token JWT para manejar la sesión del usuario
     const token = jwt.sign({ userId: user.id }, 'your_secret_key', { expiresIn: '1h' });
 
-    // Devuelve el token como respuesta (podrías devolver más información según necesites)
+    console.log('JWT token generated for user:', username);
+
+    // Devuelve el token como respuesta
     res.json({ token });
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ error: 'An error occurred while trying to login' });
+    console.error('Error during login:', error.message);
+    res.status(500).json({ error: 'An error occurred while trying to login', details: error.message });
   }
 });
 
