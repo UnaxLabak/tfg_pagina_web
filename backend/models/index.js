@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const UserModel = require('./users');
+const DockerModel = require('./docker');
 const config = require('../config/config.json');
 
 const env = process.env.NODE_ENV || 'development';
@@ -11,6 +12,7 @@ const sequelize = new Sequelize(database, username, password, {
 });
 
 const User = UserModel(sequelize, Sequelize);
+const Docker = DockerModel(sequelize, Sequelize);
 
 sequelize.sync({ force: false })
   .then(() => {
@@ -19,5 +21,6 @@ sequelize.sync({ force: false })
 
 module.exports = {
   User,
+  Docker,
   sequelize
 };

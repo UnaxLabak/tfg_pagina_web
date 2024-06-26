@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { User } = require('../models'); // Importa el modelo de usuario
+const authenticateToken = require('../middlewares/authMiddleware'); // Importar el middleware
+
 
 // Ruta para registro de usuario
 router.post('/register', async (req, res) => {
@@ -31,7 +33,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Ruta para inicio de sesión
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -53,10 +54,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    console.log('Password valid for user:', username);
+    console.log('Password valid for user:', username, user.userid);
 
     // Genera un token JWT para manejar la sesión del usuario
-    const token = jwt.sign({ userId: user.id }, 'your_secret_key', { expiresIn: '1h' });
+    const token = jwt.sign({ userid: user.userid }, 'your_secret_key', { expiresIn: '1h' });
 
     console.log('JWT token generated for user:', username);
 

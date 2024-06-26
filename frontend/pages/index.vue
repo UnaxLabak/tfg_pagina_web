@@ -20,9 +20,15 @@ export default {
   methods: {
     async activateDocker() {
       try {
-        const response = await fetch(baseURL + '/api/exercises', {
-          method: 'POST',
-        });
+        const token = localStorage.getItem('loginToken');
+        console.log(token)
+        const response = await fetch(baseURL + '/docker/exercises', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
 
         const data = await response.json();
 
