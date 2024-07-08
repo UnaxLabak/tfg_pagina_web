@@ -1,11 +1,11 @@
 module.exports = (sequelize, DataTypes) => {
     const Docker = sequelize.define('Docker', {
-        Docker_ID: {
+        DockerID: {
             type: DataTypes.STRING(19),
             allowNull: false,
             primaryKey: true
         },
-        AriketaZemb: {
+        ExerciseID: {
             type: DataTypes.BIGINT(20),
             allowNull: false
         },
@@ -18,13 +18,16 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(100),
             allowNull: false
         },
-        user: {
+        User: {
             type: DataTypes.INTEGER(11),
             allowNull: false,
             references: {
                 model: 'users', // Nombre del modelo al que pertenece la clave foránea
                 key: 'userid' // Nombre de la columna en la tabla de usuarios
             }
+        },
+        Puerto: {
+            type: DataTypes.INTEGER(11),
         }
     }, {
         timestamps: false,

@@ -1,7 +1,7 @@
 const express = require('express');
 const { Docker } = require('node-docker-api');
 const crypto = require('crypto');
-const { Docker: DockerModel } = require('../models');
+const { Docker: DockerModel, User } = require('../models'); // Asegúrate de que estos nombres son correctos
 const authenticateToken = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -9,19 +9,33 @@ const docker = new Docker();
 
 const DOCKER_IMAGE_PREFIX = 'ctf_exercise_';
 
-const generateRandomHash = () => {
-    return crypto.randomBytes(24).toString('base64').replace(/=+$/, '').substring(0, 32);
+// FUNCIONES DE DOCKER
+
+const startDocker = async (exerciseId) => {
+    const container = await docker.container.get(exerciseId);
+    await container.start();
+    console.log(`Started Docker container with ID: ${exerciseId}`);
+};
+
+const stopDocker = async (exerciseId) => {
+    const container = await docker.container.get(exerciseId);
+    await container.stop();
+    console.log(`Stopped Docker container with ID: ${exerciseId}`);
+};
+
+const deleteDocker = async (exerciseId) => {
+    const container = await docker.container.get(exerciseId);
+    await container.stop();
+    await container.delete();
+    console.log(`Deleted Docker container with ID: ${exerciseId}`);
 };
 
 // Función para crear el contenedor Docker de un ejercicio
 const createDockerContainer = async (exerciseId, flag) => {
-    console.log(`Creating Docker container for exercise: ${exerciseId} with flag: ${flag}`);
-
     const getPort = (await import('get-port')).default;
     const hostPort = await getPort();
-
     const container = await docker.container.create({
-        Image: `${DOCKER_IMAGE_PREFIX}${exerciseId}`,
+        Image: `${DOCKER_IMAGE_PREFIX}${'example'}`,
         AttachStdin: true,
         AttachStdout: true,
         AttachStderr: true,
@@ -37,41 +51,154 @@ const createDockerContainer = async (exerciseId, flag) => {
     return { container, hostPort };
 };
 
-const saveDockerInDB = async(dockerId, flag, userid) => {
-    console.log(`Saving Docker container in database with ID: ${dockerId} and flag: ${flag} for user: ${userid}`);
+// FUNCIONES DE BASE DE DATOS READ ONLY
 
+const hasUserActiveExercise = async (userid) => {
+    const exercise = await DockerModel.findOne({ where: { User: userid, Estado: 'activo' } });
+    return exercise;
+};
+
+const isActiveExerciseSelected = async (userid, exerciseId) => {
+    const exercise = await DockerModel.findOne({ where: { User: userid, ExerciseID: exerciseId, Estado: 'activo' } });
+    return exercise;
+};
+
+const hasUserSelectedExerciseDeactivated = async (userid, exerciseId) => {
+    const exercise = await DockerModel.findOne({ where: { User: userid, ExerciseID: exerciseId, Estado: 'inactivo' } });
+    return exercise;
+};
+
+// FUNCIONES DE BASE DE DATOS WRITE
+
+const activateSelectedExercise = async (dockerId, userid) => {
+    await DockerModel.update({ Estado: 'activo' }, { where: { DockerID: dockerId } });
+    await User.update({ ariketa_activa: dockerId }, { where: { userid } });
+};
+
+const desactivateActiveExercise = async (userid) => {
+    const exercise = await DockerModel.findOne({ where: { User: userid, Estado: 'activo' } });
+    if (exercise) {
+        await deactivateExercise(exercise);
+    }   
+};
+
+const deactivateExercise = async (exercise)  =>{
+    console.log(`Desactivating Docker container with ID: ${exercise.DockerID} for user: ${exercise.user}`);
+    await DockerModel.update({ Estado: 'inactivo' }, { where: { DockerID: exercise.DockerID } });
+    await User.update({ ariketa_activa: null }, { where: { userid: exercise.user } });
+    await stopDocker(exercise.DockerID);
+}
+
+const saveExerciseDockerInDB = async (dockerId, flag, userid, exerciseId) => {
+    console.log(`Saving Docker container in database with ID: ${dockerId} and flag: ${flag} for user: ${userid} exercise type: ${exerciseId}`);
     await DockerModel.create({
-        Docker_ID: dockerId,
-        AriketaZemb: 'example',
+        DockerID: dockerId,
+        ExerciseID: exerciseId,
         Estado: 'activo',
         Flag: flag,
-        user: userid
+        User: userid
     });
-}
+    await User.update({ ariketa_activa: dockerId }, { where: { userid } });
 
-const finalizarDocker = async(exerciseId) => {
-    await DockerModel.update({ Estado: 'inactivo' }, { where: { Docker_ID: exerciseId } });
-}
+};
 
-// Ruta para gestionar la creación del ejercicio.
+const finalizeExercise = async (exercise) => {
+    await DockerModel.update({ Estado: 'finalizado' }, { where: { DockerID: exercise.DockerID } });
+    await User.update({ ariketa_activa: null }, { where: { userid: exercise.user } });
+    await deleteDocker(exercise.DockerID);
+
+    console.log(`Exercise with Docker ID: ${exercise.DockerID} finalized successfully`);
+};
+
+// OTRAS FUNCIONES
+
+const generateRandomHash = () => {
+    return crypto.randomBytes(24).toString('base64').replace(/=+$/, '').substring(0, 32);
+};
+
+const checkUserResponse = async (exerciseId, userId, userResponse) => {
+    const exercise = await DockerModel.findOne({ where: { ExerciseID: exerciseId, User: userId, Estado: 'activo' } });
+    if (!exercise) {
+        throw new Error('Exercise not found or not active');
+    }
+
+    const flag = exercise.Flag;
+    const isCorrect = flag === userResponse;
+    
+    if (isCorrect) {
+        await finalizeExercise(exercise);
+    }
+    
+    return isCorrect;
+};
+
+
+// RUTA PARA GESTIONAR LA CREACIÓN DEL EJERCICIO
 router.post('/exercises', authenticateToken, async (req, res) => {
+    let container;
     try {
-        console.log('Received request to create exercise Docker container');
-        const flag = generateRandomHash();
-        console.log(`Generated flag for the exercise: ${flag}`);
-        console.log(`Request body: ${JSON.stringify(req.user)}`);
-        const { container, hostPort } = await createDockerContainer(req.body.id, flag);
-
-        // Asegúrate de que req.user.userId tiene un valor
         if (!req.user || !req.user.userid) {
             return res.status(400).json({ message: 'User ID not found in request' });
         }
 
-        await saveDockerInDB(container.id, flag, req.user.userid);
+        const userId = req.user.userid;
+        const exerciseId = req.body.exerciseId;
 
-        res.status(201).json({ message: 'Exercise Docker activated successfully', flag, port: hostPort });
+        const activeExercise = await hasUserActiveExercise(userId);
+        if (activeExercise) {
+            if (await isActiveExerciseSelected(userId, exerciseId)) {
+                return res.status(400).json({ message: 'User has already selected this exercise' });
+            } else {
+                await desactivateActiveExercise(userId);
+            }
+        }
+
+        const deactivatedExercise = await hasUserSelectedExerciseDeactivated(userId, exerciseId);
+        if (deactivatedExercise) {
+            await activateSelectedExercise(deactivatedExercise.DockerID, userId);
+            await startDocker(deactivatedExercise.DockerID);
+        } else {
+            const flag = generateRandomHash();
+            const result = await createDockerContainer(exerciseId, flag);
+            container = result.container;
+            const hostPort = result.hostPort;
+            await saveExerciseDockerInDB(container.id, flag, userId, exerciseId);
+
+            res.status(201).json({ message: 'Exercise Docker activated successfully', flag, port: hostPort });
+        }
     } catch (err) {
         console.error('Error while creating exercise Docker:', err);
+        if (container) {
+            await container.stop();
+            await container.delete();
+        }
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/exercises/check', authenticateToken, async (req, res) => {
+    try {
+        if (!req.user || !req.user.userid) {
+            return res.status(400).json({ message: 'User ID not found in request' });
+        }
+
+        const userId = req.user.userid;
+        const { exerciseId, userResponse } = req.body;
+
+        // Verificar que el usuario ha enviado una respuesta
+        if (!userResponse) {
+            return res.status(400).json({ message: 'No response provided' });
+        }
+
+        // Comprobar la respuesta del usuario
+        const isCorrect = await checkUserResponse(exerciseId, userId, userResponse);
+
+        res.status(200).json({ correct: isCorrect });
+    } catch (err) {
+        console.error('Error while checking exercise Docker:', err);
+        if (err.message === 'Exercise not found or not active') {
+            return res.status(404).json({ message: err.message });
+        }
         res.status(500).json({ message: 'Internal server error' });
     }
 });
@@ -80,16 +207,19 @@ router.post('/exercises', authenticateToken, async (req, res) => {
 router.delete('/exercises/:exerciseId', authenticateToken, async (req, res) => {
     try {
         const exerciseId = req.params.exerciseId;
-        console.log(`Received request to delete exercise Docker container with ID: ${exerciseId}`);
+        const userId = req.user.userid; // Obtener el ID del usuario autenticado
+        console.log(`Received request to delete exercise Docker container with exercise ID: ${exerciseId} for user: ${userId}`);
 
-        const container = await docker.container.get(exerciseId);
-        await container.stop();
-        await container.delete();
+        // Verificar que el ejercicio pertenece al usuario
+        const exercise = await DockerModel.findOne({ where: { ExerciseID: exerciseId, User: userId, Estado: 'activo' } });
+        if (!exercise) {
+            return res.status(404).json({ message: 'No existe el ejercicio o no esta activo' });
+        }
 
-        await finalizarDocker(exerciseId);
+        await deactivateExercise(exercise);
 
-        console.log(`Deleted Docker container with ID: ${exerciseId}`);
-        res.status(200).json({ message: `Exercise Docker for ID ${exerciseId} deleted successfully` });
+        console.log(`Stoped Docker container with exercise ID: ${exerciseId}`);
+        res.status(200).json({ message: `Exercise Docker for ID ${exerciseId} stoped successfully` });
     } catch (err) {
         console.error('Error while deleting exercise Docker:', err);
         res.status(500).json({ message: 'Internal server error' });
