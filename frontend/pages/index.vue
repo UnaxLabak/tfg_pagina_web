@@ -1,13 +1,17 @@
 <template>
   <div>
-    <Ariketa :id="1" statusColor="green" />
-    <Ariketa :id="2" statusColor="orange" />
+    <AriketaStatus :activeExercise="activeExercise" />
+    <Ariketa :id="1" statusColor="green" @exercise-activated="updateActiveExercise" />
+    <Ariketa :id="2" statusColor="green" @exercise-activated="updateActiveExercise" />
+    <Ariketa :id="3" statusColor="green" @exercise-activated="updateActiveExercise" />
+
   </div>
 </template>
 
 <script>
 import Boton from '@/components/Boton.vue';
 import Ariketa from '@/components/Ariketa.vue';
+import AriketaStatus from '@/components/Status.vue';
 
 const baseURL = 'http://localhost:8000';
 
@@ -15,9 +19,18 @@ export default {
   layout: 'default',
   components: {
     Boton,
-    Ariketa
+    Ariketa,
+    AriketaStatus
+  },
+  data() {
+    return {
+      activeExercise: null
+    };
   },
   methods: {
+    updateActiveExercise(exerciseData) {
+      this.activeExercise = exerciseData;
+    },
     async activateDocker() {
       try {
         const token = localStorage.getItem('loginToken');

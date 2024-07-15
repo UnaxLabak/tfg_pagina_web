@@ -35,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Docker.associate = function(models) {
-        Docker.belongsTo(models.User, { foreignKey: 'user' });
+        Docker.belongsTo(models.User, { foreignKey: 'User' });
     };
 
     return Docker;

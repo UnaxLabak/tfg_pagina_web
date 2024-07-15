@@ -35,7 +35,7 @@ const createDockerContainer = async (exerciseId, flag) => {
     const getPort = (await import('get-port')).default;
     const hostPort = await getPort();
     const container = await docker.container.create({
-        Image: `${DOCKER_IMAGE_PREFIX}${'example'}`,
+        Image: `${DOCKER_IMAGE_PREFIX}${exerciseId}`,
         AttachStdin: true,
         AttachStdout: true,
         AttachStderr: true,
@@ -64,6 +64,7 @@ const isActiveExerciseSelected = async (userid, exerciseId) => {
 };
 
 const hasUserSelectedExerciseDeactivated = async (userid, exerciseId) => {
+    console.log(`Checking if user: ${userid} has selected exercise: ${exerciseId} deactivated`);
     const exercise = await DockerModel.findOne({ where: { User: userid, ExerciseID: exerciseId, Estado: 'inactivo' } });
     return exercise;
 };
@@ -76,6 +77,7 @@ const activateSelectedExercise = async (dockerId, userid) => {
 };
 
 const desactivateActiveExercise = async (userid) => {
+    console.log(`Desactivating active Docker container for user: ${userid}`);
     const exercise = await DockerModel.findOne({ where: { User: userid, Estado: 'activo' } });
     if (exercise) {
         await deactivateExercise(exercise);
@@ -85,26 +87,26 @@ const desactivateActiveExercise = async (userid) => {
 const deactivateExercise = async (exercise)  =>{
     console.log(`Desactivating Docker container with ID: ${exercise.DockerID} for user: ${exercise.user}`);
     await DockerModel.update({ Estado: 'inactivo' }, { where: { DockerID: exercise.DockerID } });
-    await User.update({ ariketa_activa: null }, { where: { userid: exercise.user } });
+    await User.update({ ariketa_activa: null }, { where: { userid: exercise.User } });
     await stopDocker(exercise.DockerID);
 }
 
-const saveExerciseDockerInDB = async (dockerId, flag, userid, exerciseId) => {
-    console.log(`Saving Docker container in database with ID: ${dockerId} and flag: ${flag} for user: ${userid} exercise type: ${exerciseId}`);
+const saveExerciseDockerInDB = async (dockerId, flag, userid, exerciseId, hostPort) => {
+    console.log(`Saving Docker container in database with ID: ${dockerId}, flag: ${flag}, port: ${hostPort}, for user: ${userid}, exercise type: ${exerciseId}`);
     await DockerModel.create({
         DockerID: dockerId,
         ExerciseID: exerciseId,
         Estado: 'activo',
         Flag: flag,
-        User: userid
+        User: userid,
+        Puerto: hostPort
     });
     await User.update({ ariketa_activa: dockerId }, { where: { userid } });
-
 };
 
 const finalizeExercise = async (exercise) => {
     await DockerModel.update({ Estado: 'finalizado' }, { where: { DockerID: exercise.DockerID } });
-    await User.update({ ariketa_activa: null }, { where: { userid: exercise.user } });
+    await User.update({ ariketa_activa: null }, { where: { userid: exercise.User } });
     await deleteDocker(exercise.DockerID);
 
     console.log(`Exercise with Docker ID: ${exercise.DockerID} finalized successfully`);
@@ -132,7 +134,6 @@ const checkUserResponse = async (exerciseId, userId, userResponse) => {
     return isCorrect;
 };
 
-
 // RUTA PARA GESTIONAR LA CREACIÓN DEL EJERCICIO
 router.post('/exercises', authenticateToken, async (req, res) => {
     let container;
@@ -143,7 +144,7 @@ router.post('/exercises', authenticateToken, async (req, res) => {
 
         const userId = req.user.userid;
         const exerciseId = req.body.exerciseId;
-
+         console.log ("User id:", userId)
         const activeExercise = await hasUserActiveExercise(userId);
         if (activeExercise) {
             if (await isActiveExerciseSelected(userId, exerciseId)) {
@@ -157,12 +158,14 @@ router.post('/exercises', authenticateToken, async (req, res) => {
         if (deactivatedExercise) {
             await activateSelectedExercise(deactivatedExercise.DockerID, userId);
             await startDocker(deactivatedExercise.DockerID);
+            res.status(201).json({ message: 'Exercise Docker reactivated successfully', flag: deactivatedExercise.Flag, port: deactivatedExercise.Puerto});
+
         } else {
             const flag = generateRandomHash();
             const result = await createDockerContainer(exerciseId, flag);
             container = result.container;
             const hostPort = result.hostPort;
-            await saveExerciseDockerInDB(container.id, flag, userId, exerciseId);
+            await saveExerciseDockerInDB(container.id, flag, userId, exerciseId, hostPort);
 
             res.status(201).json({ message: 'Exercise Docker activated successfully', flag, port: hostPort });
         }
