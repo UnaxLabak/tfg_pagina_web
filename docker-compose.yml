@@ -1,0 +1,64 @@
+version: '3.8'
+services:
+  # Servicio para la base de datos
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: tfg_datubase
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend-network
+
+  # Servicio para el backend
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: root
+      DB_NAME: tfg_datubase
+    depends_on:
+      - db
+    networks:
+      - backend-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Montar el socket Docker
+
+  # Servicio para el frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - backend-network
+
+  # Servicio para Nginx
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - backend-network
+
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  db_data:
