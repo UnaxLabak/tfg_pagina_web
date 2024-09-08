@@ -8,7 +8,9 @@ const app = express();
 const port = process.env.PORT || 8000;
 
 app.use(cors({
-  origin: 'http://localhost:3000' // Allow only this origin
+  origin: ['http://localhost:3000', 'http://tfg.eus'], // Allow these origins
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true
 }));
 
 app.use(express.json());

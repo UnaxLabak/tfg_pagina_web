@@ -3,7 +3,9 @@ const { Docker } = require('node-docker-api');
 const crypto = require('crypto');
 const { Docker: DockerModel, User } = require('../models'); // Asegúrate de que estos nombres son correctos
 const authenticateToken = require('../middlewares/authMiddleware');
-
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 const router = express.Router();
 const docker = new Docker();
 
@@ -49,6 +51,43 @@ const createDockerContainer = async (exerciseId, flag) => {
     await container.start();
     console.log(`Started Docker container with ID: ${container.id} on port: ${hostPort}`);
     return { container, hostPort };
+};
+
+
+const generateNginxRoute = async (hash, port) => {
+    console.log("UEUEUEUEUE")
+    const nginxConfig = `
+    server {
+        listen 80;
+        server_name ${hash}.tfg.eus;
+
+        location / {
+            proxy_pass http://localhost:${port};
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }`;
+
+    const configPath = path.join(__dirname, '../../nginx.conf');
+
+    // Añadir la nueva configuración al archivo nginx.conf
+    fs.appendFileSync(configPath, nginxConfig, 'utf8');
+    console.log(`Nginx config created for ${hash}.tfg.eus`);
+
+    // Recargar Nginx en el contenedor de Nginx
+    exec('docker-compose exec nginx nginx -s reload', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error reloading Nginx: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`Nginx stderr: ${stderr}`);
+            return;
+        }
+        console.log(`Nginx reloaded: ${stdout}`);
+    });
 };
 
 // FUNCIONES DE BASE DE DATOS READ ONLY
@@ -162,7 +201,9 @@ router.post('/exercises', authenticateToken, async (req, res) => {
 
         } else {
             const flag = generateRandomHash();
+            const hash = generateRandomHash();
             const result = await createDockerContainer(exerciseId, flag);
+            await generateNginxRoute(hash, result.hostPort);
             container = result.container;
             const hostPort = result.hostPort;
             await saveExerciseDockerInDB(container.id, flag, userId, exerciseId, hostPort);

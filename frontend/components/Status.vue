@@ -5,7 +5,6 @@
     </div>
     <div v-else-if="activeExercise">
       <p>Ejercicio activo: {{ activeExercise.id }}</p>
-      <p>Flag: {{ activeExercise.flag }}</p>
       <p>Puerto abierto: {{ activeExercise.port }}</p>
     </div>
     <div v-else>
