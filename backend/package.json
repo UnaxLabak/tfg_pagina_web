@@ -1,0 +1,15 @@
+{
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dockerode": "^4.0.2",
+    "express": "^4.19.2",
+    "get-port": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.9.7",
+    "nginx-conf": "^2.1.0",
+    "node-docker-api": "^1.1.22",
+    "sequelize": "^6.37.3"
+  }
+}
